@@ -1,0 +1,5 @@
+FROM nginx
+# 这里只打包从jenkins构建好的文件, 到nginx的html目录 即是dist里面的文件
+COPY dist /usr/share/nginx/html/
+COPY nginx.conf /etc/nginx/
+EXPOSE 80

@@ -1,0 +1,17 @@
+{
+  "presets": [
+    "@babel/env",
+    "@vue/babel-preset-jsx"
+  ],
+  "plugins": [
+    "@babel/plugin-syntax-dynamic-import",
+    "@babel/plugin-transform-runtime",
+    [
+      "component",
+      {
+        "libraryName": "element-ui",
+        "styleLibraryName": "theme-chalk"
+      }
+    ]
+  ]
+}
