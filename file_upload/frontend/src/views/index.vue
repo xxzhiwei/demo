@@ -2,7 +2,7 @@
   <div class="wrapper-file-upload">
     <div class="header">
       <p class="title">文件上传</p>
-      <span>支持分片、断点上传</span>
+      <span>支持分片上传、断点续传</span>
     </div>
     <input type="file" @change="onChange" />
     <div>
@@ -17,18 +17,13 @@
       <el-progress :percentage="fakeUploadPercentage"></el-progress>
     </div>
     <el-table :data="chunkData" style="width: 100%">
-      <el-table-column
-        prop="hash"
-        label="切片hash" align="center">
-      </el-table-column>
-      <el-table-column
-        label="大小(KB)" align="center" width="120">
+      <el-table-column prop="hash" label="切片hash" align="center" />
+      <el-table-column label="大小(KB)" align="center" width="120">
         <template slot-scope="{ row }">
           {{(row.size / 1000/*1000?1024? byte=1kb*/).toFixed(2)}}
         </template>
       </el-table-column>
-      <el-table-column
-        label="进度">
+      <el-table-column label="进度">
         <template slot-scope="{ row }">
           <el-progress :percentage="row.percentage" color="#6495ED" />
         </template>
@@ -76,9 +71,7 @@ export default {
   },
   methods: {
     onChange(e) {
-      // 获取input中的第一个文件
       const [file] = e.target.files
-      // Object.assign(this.$data, this.$options.data()); -> 重制?
       this.container.file = file
     },
     onProgress(targetChunk) {
@@ -88,7 +81,7 @@ export default {
         targetChunk.percentage = percentage < targetChunk.percentage ? targetChunk.percentage : percentage
       }
     },
-    // 暂停
+    // 暂停(取消请求)
     onPause() {
       for (const executor of this.requestExecutors) {
         executor('pause')
@@ -148,7 +141,6 @@ export default {
           formData.append('hash', item.hash)
           formData.append('filename', item.chunkName)
           formData.append('fileHash', item.fileHash)
-          // formData.append('size', item.size)
           return { formData, origin: item }
         })
         .map(({ formData, origin }) => xFetch({
@@ -164,17 +156,13 @@ export default {
           })
         }).then(res => {
           if (res.code === 0) {
-            // uploadResult.push(true)
             this.uploadSuccessfulCount += 1
           }
         }).catch(error => {
-          // console.log(error);
-          if (error.message === 'pause') {
-            // uploadResult.push(false)
-          }
+          // if (error.message === 'pause') {}
         }))
-      // 上传成功的切片 + 服务端返回的切片 = 所有切片数量时
       await Promise.all(requests)
+      // 上传成功的切片 + 服务端返回的切片 = 所有切片数量时
       if (this.uploadSuccessfulCount + serveChunkData.length === chunkData.length) {
         this.mergeChunks(container.file.name, container.hash)
       }
@@ -196,7 +184,7 @@ export default {
       // 表示文件已存在
       const { code, data: serveChunkData = [] } = verifyRes
       if (verifyRes.code === 0) {
-        console.log('秒传成功!');
+        this.$message({ type: 'success', message: '秒传成功!' })
         return
       }
       this.serveChunkData = serveChunkData

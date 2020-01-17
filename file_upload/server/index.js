@@ -24,12 +24,10 @@ server.on('request', async (req, res) => {
       const [chunk] = files.chunk
       const [hash] = fields.hash
       const [fileHash] = fields.fileHash
-      // const [size] = fields.size
       const chunkDir = `${staticPath}/${fileHash}`
       if (!fse.existsSync(chunkDir)) {
         await fse.mkdirs(chunkDir) // ensureDir(chunkDir) 创建目录
       }
-      // 对比(size)数据是否完整, 不完整就丢掉
       const chunkPath = `${chunkDir}/${hash}`
       await fse.move(chunk.path, chunkPath) // 将chunk从临时文件夹移动到指定文件夹
       res.end(
@@ -39,34 +37,6 @@ server.on('request', async (req, res) => {
           message: 'ok!'
         })
       )
-      // fse.stat(chunkPath, (error, stats) => {
-      //   if (error) {
-      //     return res.end(
-      //       JSON.stringify({
-      //         code: 1,
-      //         message: '服务器发生错误!'
-      //       })
-      //     )
-      //   }
-      //   if (+size === stats.size) {
-      //     res.end(
-      //       JSON.stringify({
-      //         code: 0,
-      //         data: hash,
-      //         message: 'ok!'
-      //       })
-      //     )
-      //   } else {
-      //     fse.remove(chunkPath).catch(error => console.log(error))
-      //     res.end(
-      //       JSON.stringify({
-      //         code: 1,
-      //         data: hash,
-      //         message: '传输数据丢失, 已删除该切片'
-      //       })
-      //     )
-      //   }
-      // })
     })
   }
   if (req.url === '/merge') {
@@ -120,8 +90,9 @@ async function verifyFile(req, res) {
   const requestData = await getRequestData(req)
   const { filename, fileHash } = requestData
   const ext = path.extname(filename)
-  const joinFileName = `${staticPath}/${fileHash}${ext}` // 尝试读取该名称的文件
-  const isExist = await fse.existsSync(joinFileName)
+  const chunkDir = `${staticPath}/${fileHash}`
+  const joinFileName = `${chunkDir}${ext}`
+  const isExist = await fse.existsSync(joinFileName) // 尝试读取该名称的文件()
   if (isExist) {
     res.end(
       JSON.stringify({
@@ -131,8 +102,7 @@ async function verifyFile(req, res) {
     )
   } else {
     // 尝试读取chunk
-    const chunkDir = `${staticPath}/${fileHash}`
-    const chunks = fse.existsSync(chunkDir) ? await fse.readdirSync(`${staticPath}/${fileHash}`) : []
+    const chunks = fse.existsSync(chunkDir) ? await fse.readdirSync(chunkDir) : []
     res.end(
       JSON.stringify({
         code: 1,
