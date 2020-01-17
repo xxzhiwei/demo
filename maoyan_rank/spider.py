@@ -3,7 +3,6 @@ import requests
 from requests.exceptions import RequestException
 import re
 import json
-from multiprocessing import Pool
 import datetime
 
 # 请求页面
